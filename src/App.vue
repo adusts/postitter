@@ -6,12 +6,23 @@ const Posts = ref([]);
 const nextId = ref(1);
 const grid = ref(null);
 
-function submitPost() {
+function submitPost(e) {
+    if (e && e.type === "keydown") {
+    if (!(e.ctrlKey || e.metaKey)) {
+      return;
+    }
+    e.preventDefault();
+  }
+
   const post = newPost.value.trim();
   if (!post) return;
   Posts.value.push({ id: nextId.value++, post });
   newPost.value = '';
   nextTick(resizeGridItems);
+}
+
+function deletePost(id) {
+  Posts.value = Posts.value.filter((p) => p.id !== id);
 }
 
 onMounted(() => {
@@ -84,17 +95,19 @@ function resizeGridItems() {
     <!-- <h1>Postitter</h1> -->
       <section class="posts-grid" ref="grid">
         <article class="posts-item" v-for="post in Posts" :key="post.id">
-          {{ post.post }}
+          <p>{{ post.post }}</p>
+          <button class="btn-delete" @click="deletePost(post.id)">×</button>
         </article>
       </section>
 
       <form class="composer" @submit.prevent="submitPost">
-        <label for="memo">ふせんを貼る</label>
+        <!-- <label for="memo">ふせんを貼る</label> -->
         <textarea
           id="memo"
           v-model="newPost"
           rows="4"
           placeholder="テキストを入力して「追加」で貼り付け"
+          @keydown.enter="submitPost"
         ></textarea>
         <button type="submit">追加</button>
       </form>
@@ -119,8 +132,9 @@ main {
 }
 
 .composer textarea {
-  padding: 2rem .8rem;
+  padding: 1rem .8rem 2rem;
   max-width: 300px;
+  line-height: 1.5;
 }
 
 .composer button {
@@ -148,5 +162,29 @@ main {
   box-shadow: 1px 1px 2px rgba(139, 120, 120, 0.12);
   box-sizing: border-box;
   overflow: hidden;
+  position: relative;
+}
+.posts-item  p {
+  margin: 0;
+}
+article .btn-delete {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  /* background-color: rgb(183, 183, 183);
+  padding: .3em .6em;
+  color: #fff;
+  clip-path: circle(50% at 50% 50%); */
+  font-size: 1.2em;
+  color: #949494;
+  background: transparent;
+  line-height: 1;
+  opacity: 0;
+  transition: transparent .3s;
+}
+@media (hover: hover) {
+  article:hover .btn-delete {
+    opacity: 1;
+  }
 }
 </style>
