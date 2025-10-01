@@ -1,15 +1,17 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, nextTick, onBeforeUnmount } from "vue";
 
 const newPost = ref("");
 const Posts = ref([]);
 const nextId = ref(1);
+const grid = ref(null);
 
 function submitPost() {
   const post = newPost.value.trim();
   if (!post) return;
-  Posts.value.push({ id: nextId.value++, post })
+  Posts.value.push({ id: nextId.value++, post });
   newPost.value = '';
+  nextTick(resizeGridItems);
 }
 
 onMounted(() => {
@@ -19,39 +21,83 @@ onMounted(() => {
       const arr = JSON.parse(saved);
       if (Array.isArray(arr)) {
         Posts.value = arr;
-        nextId.value = arr.reduce((m, n) => Math.max(m ,n.id || 0), 0) + 1;
+        nextId.value = arr.reduce((m, n) => Math.max(m, n.id || 0), 0) + 1;
+        nextTick(resizeGridItems);
       }
     } catch (_) {}
   }
+
+  window.addEventListener("resize", resizeGridItems);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", resizeGridItems);
 });
 
 watch(
   Posts,
-  (val) => localStorage.setItem('post-items', JSON.stringify(val)),
+  async (val) => {
+    localStorage.setItem('post-items', JSON.stringify(val));
+    await nextTick();
+    resizeGridItems();
+  },
   { deep: true }
 );
+
+onMounted(() => {
+  const observer = new MutationObserver(() => resizeGridItems());
+  if (grid.value) {
+    observer.observe(grid.value, { childList: true, subtree: true });
+  }
+  window.addEventListener("resize", resizeGridItems);
+});
+
+
+function resizeGridItems() {
+  if (!grid.value) return;
+
+  const rowHeight = parseInt(
+    window.getComputedStyle(grid.value).getPropertyValue("grid-auto-rows")
+  );
+  const rowGap = parseInt(
+    window.getComputedStyle(grid.value).getPropertyValue("gap")
+  );
+
+  const items = grid.value.querySelectorAll(".posts-item");
+
+  items.forEach((item) => {
+    item.style.gridRowEnd = "span 1";
+
+    const contentHeight = item.scrollHeight;
+
+    const rowSpan = Math.ceil((contentHeight + rowGap) / (rowHeight + rowGap));
+
+    item.style.gridRowEnd = `span ${rowSpan}`;
+  });
+}
+
 </script>
 
 <template>
   <main>
     <div class="container">
     <!-- <h1>Postitter</h1> -->
+      <section class="posts-grid" ref="grid">
+        <article class="posts-item" v-for="post in Posts" :key="post.id">
+          {{ post.post }}
+        </article>
+      </section>
 
-    <section class="posts-grid">
-      <article class="postit" v-for="post in Posts" :key="post.id">
-        {{ post.post }}
-      </article>
-    </section>
-    <form class="composer" @submit.prevent="submitPost">
-      <label for="memo">ふせんを貼る</label>
-      <textarea
-      id="memo"
-      v-model="newPost"
-      row="4"
-      placeholder="テキストを入力して「追加」で貼り付け"></textarea>
-      <button type="submit">追加</button>
-    </form>
-
+      <form class="composer" @submit.prevent="submitPost">
+        <label for="memo">ふせんを貼る</label>
+        <textarea
+          id="memo"
+          v-model="newPost"
+          rows="4"
+          placeholder="テキストを入力して「追加」で貼り付け"
+        ></textarea>
+        <button type="submit">追加</button>
+      </form>
     </div>
   </main>
 </template>
@@ -62,38 +108,45 @@ main {
   background-color: #edeae3;
   padding: 2rem;
 }
+
 .container {
-  /* max-width: 960px; */
   margin-inline: auto;
 }
+
 .composer {
   display: grid;
   gap: 1rem;
+}
 
-}
 .composer textarea {
-  /* width: 100%; */
-  padding: .8rem;
+  padding: 2rem .8rem;
+  max-width: 300px;
 }
+
 .composer button {
   justify-self: start;
-    padding: 8px 16px;
+  padding: 8px 16px;
   border: 1px solid #ccc;
   background: #f7f7f7;
   cursor: pointer;
 }
+
 .posts-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-auto-rows: 8px;
   margin-bottom: 3rem;
-  grid-template-rows: masonry;
+
 }
-.postit {
-  padding: 10px 12px;
+
+.posts-item {
+  padding: 1rem;
   background: #fff9c4;
   white-space: pre-wrap;
   word-break: break-word;
   box-shadow: 1px 1px 2px rgba(139, 120, 120, 0.12);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 </style>
