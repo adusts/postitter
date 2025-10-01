@@ -5,6 +5,8 @@ const newPost = ref("");
 const Posts = ref([]);
 const nextId = ref(1);
 const grid = ref(null);
+const selectedColor = ref("#f9faea");
+const presetColors = ['#faf4e6', '#f5d7cd', '#eaf3ee', '#dde8e4', '#c6c5ca'];
 
 function submitPost(e) {
     if (e && e.type === "keydown") {
@@ -16,7 +18,7 @@ function submitPost(e) {
 
   const post = newPost.value.trim();
   if (!post) return;
-  Posts.value.push({ id: nextId.value++, post });
+  Posts.value.push({ id: nextId.value++, post, color: selectedColor.value });
   newPost.value = '';
   nextTick(resizeGridItems);
 }
@@ -94,7 +96,11 @@ function resizeGridItems() {
     <div class="container">
     <!-- <h1>Postitter</h1> -->
       <section class="posts-grid" ref="grid">
-        <article class="posts-item" v-for="post in Posts" :key="post.id">
+        <article
+          class="posts-item"
+          v-for="post in Posts"
+          :key="post.id"
+          :style="{ background: post.color || '#fff9c4' }">
           <p>{{ post.post }}</p>
           <button class="btn-delete" @click="deletePost(post.id)">×</button>
         </article>
@@ -109,6 +115,16 @@ function resizeGridItems() {
           placeholder="テキストを入力して「追加」で貼り付け"
           @keydown.enter="submitPost"
         ></textarea>
+        <div class="color-picker">
+          <span
+            v-for="preset in presetColors"
+            :key="preset"
+            class="color-swatch"
+            :style="{ background: preset, border: selectedColor === preset ? '2px solid #333' : '1px solid #ccc' }"
+            @click="selectedColor = preset">
+          </span>
+          <input type="color" class="color-circle" v-model="selectedColor" />
+        </div>
         <button type="submit">追加</button>
       </form>
     </div>
@@ -118,7 +134,7 @@ function resizeGridItems() {
 <style scoped>
 main {
   height: 100vh;
-  background-color: #edeae3;
+  background-color: #f9f9f9;
   padding: 2rem;
 }
 
@@ -187,4 +203,31 @@ article .btn-delete {
     opacity: 1;
   }
 }
+.color-picker {
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-block;
+}
+.color-circle {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  width: 30px;
+  height: 32px;
+  cursor: pointer;
+  border: none;
+
+}
+
 </style>
