@@ -95,13 +95,27 @@ function resizeGridItems() {
   <main>
     <div class="container">
     <!-- <h1>Postitter</h1> -->
-      <section class="posts-grid" ref="grid">
+      <!-- <section class="posts-grid" ref="grid">
         <article
           class="posts-item"
           v-for="post in Posts"
           :key="post.id"
           :style="{ background: post.color || '#fff9c4' }">
           <p>{{ post.post }}</p>
+          <button class="btn-delete" @click="deletePost(post.id)">×</button>
+        </article>
+      </section> -->
+      <section class="posts-grid" ref="grid">
+        <article
+          class="posts-item"
+          v-for="post in Posts"
+          :key="post.id">
+          <div
+            class="posts-inner"
+            :style="{ background: post.color || '#fff9c4' }">
+            <p>{{ post.post }}</p>
+          </div>
+
           <button class="btn-delete" @click="deletePost(post.id)">×</button>
         </article>
       </section>
@@ -112,7 +126,7 @@ function resizeGridItems() {
           id="memo"
           v-model="newPost"
           rows="4"
-          placeholder="テキストを入力して「追加」で貼り付け"
+          placeholder="テキストを入力し 追加またはCtrl＋Enterで貼り付け"
           @keydown.enter="submitPost"
         ></textarea>
         <div class="color-picker">
@@ -136,6 +150,9 @@ main {
   height: 100vh;
   background-color: #f9f9f9;
   padding: 2rem;
+  color: #383838;
+  font-family: "Yusei Magic", sans-serif;
+  letter-spacing: .75px;
 }
 
 .container {
@@ -151,6 +168,7 @@ main {
   padding: 1rem .8rem 2rem;
   max-width: 300px;
   line-height: 1.5;
+  font-family: 'Yusei Magic';
 }
 
 .composer button {
@@ -171,46 +189,66 @@ main {
 }
 
 .posts-item {
+  --cut: 1.2rem;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  overflow: visible;
+  filter: drop-shadow(1px 1px 1px rgba(118, 116, 116, 0.488));
+}
+.posts-inner {
   padding: 1rem;
-  background: #fff9c4;
   white-space: pre-wrap;
   word-break: break-word;
-  box-shadow: 1px 1px 2px rgba(139, 120, 120, 0.12);
   box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
+  clip-path: polygon( 0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+  height: 100%;
+  transition: clip-path 0.2s ease;
+}
+.posts-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: var(--cut);
+  height: var(--cut);
+  background-color: #383838;
+  clip-path: polygon(20% 0%, 100% 0%, 5% 95%);
+  mix-blend-mode: overlay;
+  transition: width 0.2s ease, height 0.2s ease;
 }
 .posts-item  p {
   margin: 0;
+  text-align: justify;
 }
-article .btn-delete {
+.posts-item .btn-delete {
   position: absolute;
-  top: 3px;
+  bottom: 0px;
   right: 3px;
-  /* background-color: rgb(183, 183, 183);
-  padding: .3em .6em;
-  color: #fff;
-  clip-path: circle(50% at 50% 50%); */
   font-size: 1.2em;
   color: #949494;
   background: transparent;
   line-height: 1;
   opacity: 0;
-  transition: transparent .3s;
+  transition: all .5s;
+  transition: opacity 0.1s ease;
+  filter: none;
+  z-index: -1;
 }
 @media (hover: hover) {
-  article:hover .btn-delete {
+  .posts-item:hover .btn-delete {
     opacity: 1;
+  }
+  .posts-item:hover {
+    --cut: 2rem
   }
 }
 .color-picker {
-
   display: flex;
   align-items: center;
   gap: 8px;
 
 }
-
 .color-swatch {
   width: 24px;
   height: 24px;
