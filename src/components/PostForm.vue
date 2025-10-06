@@ -72,6 +72,7 @@ function handleSubmit(e) {
 }
 .color-picker {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 .color-swatch {

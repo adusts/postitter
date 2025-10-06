@@ -1,12 +1,15 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import draggable from "vuedraggable";
 import PostItem from "./PostItem.vue";
 
 const props = defineProps({
-  posts: { type: Array, required: true }
+  posts: { type: Array, required: true },
 });
-defineEmits(["delete"]);
 
+const emit = defineEmits(["delete", "update:posts"]);
+
+const localPosts = ref([...props.posts]);
 const grid = ref(null);
 let observer = null;
 
@@ -22,7 +25,7 @@ function resizeGridItems() {
   items.forEach((item) => {
     item.style.gridRowEnd = "span 1";
     const contentHeight = item.scrollHeight;
-    const rowSpan = Math.ceil((contentHeight + rowGap) / (rowHeight + rowGap));
+    const rowSpan = Math.ceil(( contentHeight + rowGap ) / ( rowHeight + rowGap ));
     item.style.gridRowEnd = `span ${rowSpan}`;
   });
 }
@@ -32,7 +35,7 @@ onMounted(async () => {
   resizeGridItems();
 
   observer = new MutationObserver(() => resizeGridItems());
-  if (grid.value) {
+  if(grid.value) {
     observer.observe(grid.value, { childList: true, subtree: true });
   }
   window.addEventListener("resize", resizeGridItems);
@@ -43,34 +46,60 @@ onBeforeUnmount(() => {
   window.removeEventListener("resize", resizeGridItems);
 });
 
-// posts の変更（追加・削除・色変更）でリサイズ
 watch(
   () => props.posts,
-  async () => {
-    await nextTick();
-    resizeGridItems();
+  (newVal) => {
+    localPosts.value = [...newVal];
+    nextTick(resizeGridItems);
   },
   { deep: true }
 );
+
+function onDrugEnd() {
+  emit("update:posts", localPosts.value);
+  nextTick(resizeGridItems);
+}
+
 </script>
 
 <template>
   <section class="posts-grid" ref="grid">
-    <PostItem
-      v-for="post in posts"
-      :key="post.id"
-      :post="post"
-      @delete="$emit('delete', $event)"
-    />
+    <draggable
+      v-model="localPosts"
+      item-key="id"
+      :animation="200"
+      ghost-class="drag-ghost"
+      tag="div"
+      class="draggable-list"
+      @end="onDrugEnd"
+    >
+      <template #item="{ element }">
+        <PostItem
+          :post="element"
+          @delete="$emit('delete', element.id)"
+          class="posts-item"
+        />
+      </template>
+    </draggable>
   </section>
 </template>
 
 <style scoped>
 .posts-grid {
   display: grid;
-  gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   grid-auto-rows: 8px;
+  gap: 1rem;
   margin-bottom: 3rem;
+  align-items: start;
+}
+
+.draggable-list {
+  display: contents;
+}
+
+.drag-ghost {
+  opacity: 0.2;
+  transform: scale(1.05);
 }
 </style>

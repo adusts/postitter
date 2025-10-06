@@ -19,7 +19,7 @@ export function usePosts() {
       const arr = JSON.parse(saved);
       if (Array.isArray(arr)) {
         posts.value = arr;
-        nextId.value = arr.reduce((m, n) => Math.max(m, n.id || 0), 0) + 1;
+        nextId.value = arr.reduce((acc, cur) => Math.max(acc, cur.id || 0), 0) + 1;
       }
     } catch (_) { }
   }

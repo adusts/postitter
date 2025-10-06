@@ -13,7 +13,9 @@ const presetColors = ['#faf4e6', '#f5d7cd', '#eaf3ee', '#dde8e4', '#c6c5ca'];
 <template>
   <main>
     <div class="container">
-      <PostGrid :posts="posts" @delete="deletePost" />
+      <PostGrid
+        v-model:posts="posts"
+        @delete="deletePost" />
 
       <PostForm
         :presetColors="presetColors"
